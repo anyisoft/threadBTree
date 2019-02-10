@@ -72,6 +72,31 @@ void InThreading(BiThrTree p)
 	}
 }
 
+void PreThreading(BiThrTree p)
+{
+	if (p) {
+		if (!p->lchild) {
+			p->LTag = Thread;
+			p->lchild = pre;
+		}
+
+		if (!pre->rchild) {
+			pre->RTag = Thread;
+			pre->rchild = p;
+		}
+
+		pre = p;
+
+		if (p->LTag == Link) {
+			PreThreading(p->lchild);
+		}
+
+		if (p->RTag == Link) {
+			PreThreading(p->rchild);
+		}
+	}
+}
+
 /**
  * 建立头结点，中序线索二叉树
  */
@@ -104,6 +129,30 @@ Status InOrderThreading(BiThrTree &Thrt, BiThrTree T)
 }
 
 /**
+ * 建立头结点，前序线索二叉树
+ */
+Status PreOrderThreading(BiThrTree &Thrt, BiThrTree T)
+{
+	if (!(Thrt = (BiThrTree)malloc(sizeof(BiThrNode) ) ) ) {
+		return ERROR;
+	}
+
+	Thrt->RTag = Thread;
+	Thrt->rchild = Thrt;
+	Thrt->LTag = Link;
+	if (!T) {
+		Thrt->lchild = Thrt;
+	}
+	else {
+		Thrt->lchild = T;
+		pre = Thrt;
+		PreThreading(T);
+		pre->RTag = Thread;
+		Thrt->rchild = pre;
+	}
+}
+
+/**
  * 中序遍历线索二叉树的非递归算法，对每个数据元素调用函数visit
  * T 指向头结点，头结点的左链lchild 指向根结点，可参见线索化算法
  */
@@ -126,9 +175,32 @@ Status InOrderTraverse_Thr(BiThrTree T, Status( *visit)(TElemType e) )
 	return OK;
 }
 
+/**
+ * 前序遍历线索二叉树
+ * 非递归，对每个数据元素调用函数visit
+ * T 指向头结点，头结点的lchild 指向根节点
+ */
+Status PreOrderTraverse_Thr(BiThrTree T, Status(* visit)(TElemType e) )
+{
+	BiThrTree p;
+
+	p = T->lchild;
+	while (p != T && p != NULL) {
+		visit(p->data);
+		if (p->LTag == Link) {
+			p = p->lchild;
+		}
+		else {
+			p = p->rchild;
+		}
+	}
+
+	return OK;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
-	BiThrTree T, inorderT;
+/*	BiThrTree T, inorderT;
 
 	printf("create tree...\n");
 	CreateBiThrTree(T);
@@ -136,6 +208,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	printf("\n中序遍历线索二叉树\n");
 	InOrderThreading(inorderT, T);
 	InOrderTraverse_Thr(inorderT, visit);
+	printf("\n");*/
+
+	BiThrTree T, preT;
+	printf("创建树...\n");
+	CreateBiThrTree(T);
+	printf("\n前序遍历线索二叉树\n");
+	PreOrderThreading(preT, T);
+	PreOrderTraverse_Thr(preT, visit);
 	printf("\n");
 
 	return 0;
