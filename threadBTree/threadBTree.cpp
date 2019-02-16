@@ -1,8 +1,14 @@
 // threadBTree.cpp : 定义控制台应用程序的入口点。
 //
-
+#define USING_VS_CODE  0
+#ifndef USING_VS_CODE
 #include "stdafx.h"
 #include "stdlib.h"
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 
 #define Status int
 #define OK 1
@@ -258,7 +264,11 @@ Status PostOrderTraverse_Thr(BiThrTree T, Status(* visit)(TElemType e) )
 	return OK;
 }
 
+#ifndef USING_VS_CODE
 int _tmain(int argc, _TCHAR* argv[])
+#else
+int main(int argc, char* argv[])
+#endif
 {
 /*	BiThrTree T, inorderT;
 
