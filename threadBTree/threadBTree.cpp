@@ -13,6 +13,7 @@ typedef enum { Link, Thread } PointerTag; // Link -- 0 指针 Thread -- 1 线索
 typedef struct BiThrNode {
 	TElemType data;
 	struct BiThrNode *lchild, *rchild; // left, right child pointer
+	struct BiThrNode *parent;
 	PointerTag LTag, RTag;             // left, right thread tag
 } BiThrNode, *BiThrTree;
 
@@ -23,7 +24,7 @@ int i = 0;
 /**
  * 二叉树的创建
  */
-Status CreateBiThrTree(BiThrTree &T)
+Status CreateBiThrTree(BiThrTree &T, BiThrTree &p)
 {
 	if (Vexch[i++] == '$') {
 		T = NULL;
@@ -34,11 +35,14 @@ Status CreateBiThrTree(BiThrTree &T)
 			return 0;
 		}
 		T->data = Vexch[i-1];
+		T->parent = p;
+
 		printf("%5c", T->data);
+
 		T->LTag = Link;
-		CreateBiThrTree(T->lchild); // 创建左子树
+		CreateBiThrTree(T->lchild, T); // 创建左子树
 		T->RTag = Link;
-		CreateBiThrTree(T->rchild); // 创建右子树
+		CreateBiThrTree(T->rchild, T); // 创建右子树
 	}
 
 	return 1;
@@ -94,6 +98,25 @@ void PreThreading(BiThrTree p)
 		if (p->RTag == Link) {
 			PreThreading(p->rchild);
 		}
+	}
+}
+
+void PostThreading(BiThrTree p)
+{
+	if (p) {
+		PostThreading(p->lchild);
+		PostThreading(p->rchild);
+		if (!p->lchild) {
+			p->LTag = Thread;
+			p->lchild = pre;
+		}
+
+		if (pre && !pre->rchild) {
+			pre->RTag = Thread;
+			pre->rchild = p;
+		}
+
+		pre = p;
 	}
 }
 
@@ -198,6 +221,43 @@ Status PreOrderTraverse_Thr(BiThrTree T, Status(* visit)(TElemType e) )
 	return OK;
 }
 
+Status PostOrderTraverse_Thr(BiThrTree T, Status(* visit)(TElemType e) )
+{
+	BiThrTree p;
+
+	p = T;
+	pre = NULL;
+
+	while (p!=NULL) {
+		while (p->LTag == Link) {
+			p = p->lchild;
+		}
+
+		while (p->RTag == Thread) {
+			visit(p->data);
+			pre = p;
+			p = p->rchild;
+		}
+
+		if (p == T) {
+			visit(p->data);
+			break;
+		}
+
+		while (p && p->rchild == pre ) {
+			visit(p->data);
+			pre = p;
+			p = p->parent;
+		}
+
+		if (p && p->RTag == Link) {
+			p = p->rchild;
+		}
+	}
+
+	return OK;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 /*	BiThrTree T, inorderT;
@@ -210,12 +270,22 @@ int _tmain(int argc, _TCHAR* argv[])
 	InOrderTraverse_Thr(inorderT, visit);
 	printf("\n");*/
 
-	BiThrTree T, preT;
+/*	BiThrTree T, preT;
 	printf("创建树...\n");
 	CreateBiThrTree(T);
 	printf("\n前序遍历线索二叉树\n");
 	PreOrderThreading(preT, T);
 	PreOrderTraverse_Thr(preT, visit);
+	printf("\n");*/
+
+	BiThrTree postT;
+
+	printf("创建树...\n");
+	pre = NULL;
+	CreateBiThrTree(postT, pre);
+	printf("\n后序遍历线索二叉树\n");
+	PostThreading(postT);
+	PostOrderTraverse_Thr(postT, visit);
 	printf("\n");
 
 	return 0;
